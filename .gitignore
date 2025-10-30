@@ -1,0 +1,14 @@
+.idea/
+
+# Environment files
+.env
+.env.local
+
+# Local documentation
+docs/local/*
+
+!/deployment/temp/.gitkeep
+/deployment/temp/*
+/.vscode/settings.json
+
+.DS_Store
