@@ -1,0 +1,86 @@
+name: ${COMPOSE_PROJECT_NAME:-wordpress-template}
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: db
+    ports:
+      - ${DB_PORT:-3306}:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-wordpress}
+      MYSQL_USER: ${DB_USER:-wp}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-wp_pass}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - mysql_config:/etc/mysql/conf.d
+      - ./deployment/services/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - default
+    healthcheck:
+      test:
+        - CMD
+        - mysqladmin
+        - ping
+        - -h
+        - localhost
+        - -u
+        - root
+        - -p$${MYSQL_ROOT_PASSWORD}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    env_file: ./.env
+
+  wordpress:
+    build:
+      context: ./deployment/services/nginx84/build
+      dockerfile: Dockerfile
+    container_name: wordpress
+    ports:
+      - ${HTTP_PORT:-8000}:80
+      - ${HTTPS_PORT:-8443}:443
+    volumes:
+      - ${WP_DIR:-./wordpress}:/var/www/html
+      - ./deployment/services/nginx84/conf/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./deployment/services/nginx84/conf/ssl.conf:/etc/nginx/conf.d/ssl.conf
+      - ./deployment/services/nginx84/conf/xdebug.ini:/etc/php84/conf.d/50_xdebug.ini:ro
+      - ./deployment/services/nginx84/ssl:/etc/nginx/ssl:ro
+    working_dir: /var/www/html
+    depends_on:
+      - db
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -f -k https://localhost:443/ || curl -f http://localhost:80/
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - default
+    env_file: ./.env.merged
+
+  phpmyadmin:
+    image: phpmyadmin:5.2-apache
+    depends_on:
+      - db
+    restart: unless-stopped
+    ports:
+      - ${PHPMYADMIN_PORT}:80
+    environment:
+      - PMA_HOST=db
+      - PMA_USER=${DB_USER}
+      - PMA_PASSWORD=${DB_PASSWORD}
+
+networks:
+  default:
+    driver: bridge
+volumes:
+  mysql_data:
+    driver: local
+  mysql_config:
+    driver: local
+ 
+
+

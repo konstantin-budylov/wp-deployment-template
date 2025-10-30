@@ -2,24 +2,9 @@ nginx84:
   compose: deployment/services/nginx84/docker-compose.yml
   env: deployment/services/nginx84/.env.dist
   depends:
-    - redis
     - mysql
-    - postgresql
-    - rabbitmq
-
-redis:
-  compose: deployment/services/redis/docker-compose.yml
-  env: deployment/services/redis/.env.dist
 
 mysql:
   compose: deployment/services/mysql/docker-compose.yml
   env: deployment/services/mysql/.env.dist
-
-rabbitmq:
-    compose: deployment/services/rabbitmq/docker-compose.yml
-    env: deployment/services/rabbitmq/.env.dist
-
-postgresql:
-  compose: deployment/services/postgresql/docker-compose.yml
-  env: deployment/services/postgresql/.env.dist
 
